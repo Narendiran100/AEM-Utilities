@@ -1,0 +1,338 @@
+<html lang="en"><head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="AEM Stuff">
+    <meta name="author" content="Sham HC">
+   
+
+	 <title>Package list organizer</title>
+
+    <!-- Bootstrap Core CSS - Uses Bootswatch Flatly Theme: http://bootswatch.com/flatly/ -->
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link href="../css/aemstuff_1.css" rel="stylesheet">
+    <link href="../css/aemstuff.css" rel="stylesheet">
+
+    <!-- Custom Fonts -->
+    <link href="../font-awesome-4.1.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">
+    <link href="https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic" rel="stylesheet" type="text/css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/plug-ins/be7019ee387/integration/jqueryui/dataTables.jqueryui.css">
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+        <!-- jQuery Version 1.11.0 -->
+    <script src="../js/jquery.min.js"></script>
+
+<style>
+  .changed{
+  		border-right: 1px solid #C1DAD7;
+		border-bottom: 1px solid #C1DAD7;
+		background: #fff;
+		padding: 6px 6px 6px 12px;
+		color: #4f6b72;
+		background-color: yellow;
+	}
+  .added{
+  		border-right: 1px solid #C1DAD7;
+		border-bottom: 1px solid #C1DAD7;
+		background: #fff;
+		padding: 6px 6px 6px 12px;
+		color: #4f6b72;
+		background-color: Aqua;
+	}
+  .deleted{
+  		border-right: 1px solid #C1DAD7;
+		border-bottom: 1px solid #C1DAD7;
+		background: #fff;
+		padding: 6px 6px 6px 12px;
+		color: #4f6b72;
+		background-color: #EA728A;
+	}
+  .similar{
+  		border-right: 1px solid #C1DAD7;
+		border-bottom: 1px solid #C1DAD7;
+		background: #fff;
+		padding: 6px 6px 6px 12px;
+		color: #4f6b72;
+		background-color: white;
+	}
+
+body {
+	font: normal 11px auto "Trebuchet MS", Verdana, Arial, Helvetica, sans-serif;
+	color: #4f6b72;
+	background: #E6EAE9;
+}
+
+textarea {
+    height: 200px;
+    width: 49%;
+}
+
+#results {
+	padding: 0;
+	margin: 0;
+}
+
+caption {
+	padding: 0 0 5px 0;
+	width: 700px;
+	font: italic 11px "Trebuchet MS", Verdana, Arial, Helvetica, sans-serif;
+	text-align: right;
+}
+
+th {
+	font: bold 11px "Trebuchet MS", Verdana, Arial, Helvetica, sans-serif;
+	color: #4f6b72;
+	border-right: 1px solid #C1DAD7;
+	border-bottom: 1px solid #C1DAD7;
+	border-top: 1px solid #C1DAD7;
+	letter-spacing: 2px;
+	text-transform: uppercase;
+	text-align: left;
+	padding: 6px 6px 6px 12px;
+}
+
+
+#inputs {
+    text-align: center;
+}
+
+</style>
+
+
+<script type="text/javascript">
+		 var dataSet = [];
+		 var dataTable;
+
+    function clearBoxes() {
+            document.getElementById("actualJson").value = "";
+    		dataSet = [];
+	    		dataTable.clear();
+    			dataTable.destroy();
+    			$("#Print").prop("disabled",false) ;
+    }
+
+    function startCompare(){
+    	var xmlDoc = $.parseXML( document.getElementById("actualJson").value ),
+    	$xml = $( xmlDoc ) ;
+    	var table=document.getElementById("results");
+    	var counter = 0;
+			$xml.find('crx').find('response').find('data').find('packages').find('package').each(function(){
+    			var row = [] ;
+    			$(this).children().each(function(){
+        		var tagName=this.tagName;
+        		var val=$(this).text();
+        		if(tagName =="group" || tagName =="name" || tagName =="downloadName" || tagName =="lastUnpacked" || tagName=='size' || tagName == 'createdBy'){
+        			row.push (val);
+        		}
+
+    			});
+    			dataSet.push(row);
+			});
+		renderPackageList();
+	$("#Print").prop("disabled",true) ;
+
+    }
+
+
+
+    function renderPackageList() {
+
+    dataTable = $('#results').DataTable({
+		data: dataSet,
+        columns: [
+            { title: "Group" },
+            { title: "Name" },
+            { title: "Download Name" },
+           { title: "Size" },
+           {title: "lastModifiedBy"},
+           { title: "Last Installed" }
+        ],
+        paging: false,
+    	"autoWidth": false,
+		"scrollY": 230,
+        "scrollX": true
+        ,
+        "columnDefs": [
+            { "visible": false, "targets": 0 }
+        ],
+        "order": [[ 0, 'asc' ]],
+        "displayLength": 2225,
+        "drawCallback": function ( settings ) {
+            var api = this.api();
+            var rows = api.rows( {page:'current'} ).nodes();
+            var last=null;
+
+            api.column(0, {page:'current'} ).data().each( function ( group, i ) {
+                if ( last !== group ) {
+                    $(rows).eq( i ).before(
+                        '<tr class="group" ><td colspan="4">'+group+'</td></tr>'
+                    );
+
+                    last = group;
+                }
+            }
+
+             );
+        }
+    } );
+
+
+
+    // Order by the grouping
+    $('#results tbody').on( 'click', 'tr.group', function () {
+        var currentOrder = table.order()[0];
+        if ( currentOrder[0] === 2 && currentOrder[1] === 'asc' ) {
+            table.order( [ 0, 'desc' ] ).draw();
+        }
+        else {
+            table.order( [ 0, 'asc' ] ).draw();
+        }
+    } );
+}
+
+</script>
+
+</head>
+
+<body id="page-top" class="index" style="">
+
+    <!-- Navigation -->
+    
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12">
+                    <!--img class="img-responsive" src="img/profile.png" alt=""-->
+                    <div class="intro-text">
+                        <span class="name">Package list organizer</span>
+                        <hr class="star-light">
+                        <span class="skills">Parse the output of package manager list &amp; display in readable form. </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- Portfolio Grid Section -->
+    <section id="portfolio">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12">
+
+<!--- Integration Starts--->
+
+<ul>
+<li>Paste  xml from output of http://host:port/crx/packmgr/service.jsp?cmd=ls into the text fields. Click "Print" to see the list.</li>
+<li>To reprint Click "Clear" &amp; then "Print" to see the list.</li>
+</ul>
+
+
+<fieldset>
+  <legend>Inputs xml from list </legend>
+<div id="inputs">
+
+<textarea id="actualJson"></textarea>
+<br>
+<input id="Print" type="button" onclick="startCompare();" value="Print">
+<input id="clear" type="button" onclick="clearBoxes();" value="Clear">
+</div>
+</fieldset>
+
+ <fieldset>
+  <legend>Results of comparision</legend>
+  <div id="countResult"></div>
+
+
+
+<table id="results" border="1" cellspacing="0" summary="Results of comparision">
+</table>
+</fieldset>
+
+<!--- Integration Ends--->
+
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="text-center">
+        <div class="footer-above">
+            <div class="container">
+                <div class="row">
+                    <div class="footer-col col-md-4">
+                    </div>
+                    <div class="footer-col col-md-4">
+                        <h3>Around the Web</h3>
+                        <ul class="list-inline">
+                            <li>
+                                <a href="https://twitter.com/intent/follow?original_referer=http%3A%2F%2Fwww.aemstuff.com%2F&amp;region=follow_link&amp;screen_name=adobe_sham&amp;tw_p=followbutton&amp;variant=2.0" class="btn-social btn-outline"><i class="fa fa-fw fa-twitter"></i></a>
+                            </li>
+                            <li>
+                                <a href="https://www.linkedin.com/pub/sham-sundar-hassan-chikkegowda/17/3a5/6b0" class="btn-social btn-outline"><i class="fa fa-fw fa-linkedin"></i></a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="footer-col col-md-4">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="footer-below">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <a href="../disclaimer.html">Disclaimer</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scroll to Top Button (Only visible on small and extra-small screen sizes) -->
+    <div class="scroll-top page-scroll visible-xs visble-sm">
+        <a class="btn btn-primary" href="#page-top">
+            <i class="fa fa-chevron-up"></i>
+        </a>
+    </div>
+
+    <!-- Portfolio Modals -->
+    <div id="articleModals">
+
+    </div>
+
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="../js/bootstrap.min.js"></script>
+
+    <!-- Plugin JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.3/jquery.easing.min.js"></script>
+    <script src="../js/classie.js"></script>
+    <script src="../js/cbpAnimatedHeader.js"></script>
+  <!-- jQuery -->
+<script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+<!-- DataTables -->
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.0/js/jquery.dataTables.js"></script>
+
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/plug-ins/be7019ee387/integration/jqueryui/dataTables.jqueryui.js"></script>
+
+    <!-- Custom Theme JavaScript -->
+    <script src="../js/aemstuff_1.js"></script>
+    <script type="text/javascript" charset="utf8" src="../js/aemstuff.js">  </script>
+
+
+
+
+
+</body></html>
